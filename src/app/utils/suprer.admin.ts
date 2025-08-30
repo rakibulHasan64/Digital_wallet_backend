@@ -94,8 +94,7 @@ export const seedSuPerAdmin = async () => {
 
     console.log("🎉 Super admin created successfully!");
     console.log("Super Admin Email:", envVars.ADMIN_EMAIL);
-    console.log("Super Admin Password (raw):", envVars.ADMIN_PASSWORD); // শুধু dev-এর জন্য
-    console.log("Super Admin ID:", superAdmin._id);
+    console.log("Super Admin Password (raw):", envVars.ADMIN_PASSWORD); 
   } catch (error) {
     console.error("❌ Error seeding super admin:", error);
   }

@@ -5,6 +5,7 @@ import { AuthController } from "./auth.contoller";
 import { checkAuth } from "../../middlewares/chakauth";
 import { Role } from "../user/user.interface";
 import passport from "passport";
+import { envVars } from "../../config/env";
 
 // import { Role } from "../user/user.interface";
 // import passport from "passport";
@@ -31,7 +32,7 @@ router.get("/google", async (req: Request, res: Response, next: NextFunction) =>
 })
 
 
-router.get("/google/callback", passport.authenticate("google",{failureRedirect: "/login"}),AuthController.googleCallBackConttoler)
+router.get("/google/callback", passport.authenticate("google",{failureRedirect: `${envVars.FONTEND_URL}/login?error=There is some issues with your account Please contact with out support`}),AuthController.googleCallBackConttoler)
 
 
 

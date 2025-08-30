@@ -4,6 +4,7 @@ import { serviceUser } from './user.service';
 import { catchAsync } from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { StatusCodes } from 'http-status-codes';
+import { JwtPayload } from 'jsonwebtoken';
 
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
@@ -56,13 +57,15 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response, next: Nex
 })
 
 const getMyProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const decodedToken = req.user as JwtPayload
   
-
+  const result = await serviceUser.getMyProfile(decodedToken.userId)
+  
   sendResponse(res, {
     success: true,
     statuscode: StatusCodes.OK,
-    message: 'All Users Retrieved Successfully',
-    data:{}
+    message: 'Your Profile Retrieved Successfully',
+    data:result.data
   });
 
   

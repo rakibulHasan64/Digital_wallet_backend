@@ -17,7 +17,7 @@ const router = Router();
 // ✅ Routes
 router.post("/register", userController.createUser);
 router.get("/all-user",checkAuth(Role.ADMIN), userController.getAllUsers)
-router.get("/me", checkAuth("USER", "AGENT", "ADMIN"), userController.getMyProfile);
+router.get("/me", checkAuth(...Object.values(Role)), userController.getMyProfile);
 router.patch("/me",  checkAuth("USER", "AGENT"), userController.updateMyProfile);
 router.get("/",  checkAuth("ADMIN"), userController.getAllUsers);
 

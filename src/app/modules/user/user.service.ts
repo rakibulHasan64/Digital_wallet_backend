@@ -48,6 +48,34 @@ const getAllUser = async () => {
   return users
 }
 
+
+const getSingle = async (userId: string) => {
+
+
+  const users = await User.findById(userId).select("-password")
+  return {
+    data: users
+  }
+}
+
+
+
+const getMyProfile = async (userId: string) => {
+
+
+
+  const users = await User.findById(userId).select("-password")
+  return {
+    data: users
+  } 
+}
+
+
+
+
 export const serviceUser = {
-  createUser, getAllUser
+  createUser,
+  getAllUser,
+  getMyProfile,
+  getSingle
 }
