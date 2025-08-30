@@ -22,7 +22,8 @@ export enum IsActive {
  * Auth Provider Interface
  * ========================= */
 export interface IAuthProvider {
-  provider: string;   // "google" | "email"
+  
+  provider: "google" | "credentials";  
   providerId: string;
 }
 
@@ -42,7 +43,7 @@ export interface IUser extends Document {
   address?: string;            // optional
   isVerified: boolean;         // email/phone verified?
   isDeleted: boolean;          // soft delete flag
-  authProviders?: IAuthProvider[]; // multiple auth providers
+  auths?: IAuthProvider[]; // multiple auth providers
   createdAt: Date;
   updatedAt: Date;
 }

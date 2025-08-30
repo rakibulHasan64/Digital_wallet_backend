@@ -40,8 +40,6 @@ const createUser = async (payload: Partial<IUser>) => {
 
   return user;
 };
-
-
 const getAllUser = async () => {
 
   console.log("data is ");

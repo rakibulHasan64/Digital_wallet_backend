@@ -18,11 +18,7 @@ const router = Router();
 router.post("/register", userController.createUser);
 router.get("/all-user",checkAuth(Role.ADMIN), userController.getAllUsers)
 router.get("/me", checkAuth("USER", "AGENT", "ADMIN"), userController.getMyProfile);
-
-
 router.patch("/me",  checkAuth("USER", "AGENT"), userController.updateMyProfile);
-
-
 router.get("/",  checkAuth("ADMIN"), userController.getAllUsers);
 
 router.patch("/:userId",  checkAuth("ADMIN"), userController.updateUserByAdmin);
