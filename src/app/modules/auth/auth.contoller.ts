@@ -112,7 +112,7 @@ const logout = catchAsync(async (req: Request, res: Response, next: NextFunction
 const changePassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
 
-
+  
   sendResponse(res, {
     success: true,
     statuscode: httpStatus.OK,

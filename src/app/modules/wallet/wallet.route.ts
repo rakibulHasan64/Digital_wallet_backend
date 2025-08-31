@@ -12,7 +12,8 @@ const router = express.Router();
 router.post("/add-many", checkAuth(Role.USER), WalletController.addMoney);
 router.post("/withdraw",  checkAuth(Role.USER), WalletController.withdrawMoney);
 router.post("/send",  checkAuth(Role.USER), WalletController.sendMany);
-router.get("/transactions/me", checkAuth(Role.USER), WalletController.myTransactions);
+router.get("/transactions/me", checkAuth(...Object.values(Role)), WalletController.myTransactions);
+
 
 // ✅ Agent operations
 router.post("/agent/cashin", checkAuth(Role.AGENT), WalletController.cashIn);

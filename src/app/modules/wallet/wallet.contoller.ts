@@ -6,18 +6,17 @@ import { WalletServices } from "./wallet.service";
 
 
 import httpStatus from "http-status-codes";
+import { JwtPayload } from "jsonwebtoken";
 
 
 export const addMoney = async (req: Request, res: Response, next: NextFunction) => {
   try {
-
-  
+    const { amount } = req.body;
+    const user = req.user as any
 
     
-    const { amount } = req.body;
-    const userId = req.user?.userId; 
 
-    const wallet = await WalletServices.addMoney(userId, amount);
+    const wallet = await WalletServices.addMoney(user.userId, amount);
 
     sendResponse(res, {
       success: true,
@@ -36,14 +35,18 @@ export const addMoney = async (req: Request, res: Response, next: NextFunction) 
 
 const withdrawMoney = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
-  const { amount } = req.body;
-  const userId = req.user?.userId; 
+  const amount = Number(req.body.amount);
+  const user = req.user as any
+  console.log("amout user book amndft..",amount,user);
+  
+  const wallet = await WalletServices.withdrawMoney(user.userId, amount);
 
-  const wallet = await WalletServices.withdrawMoney(userId, amount);
+  console.log("WALLATE IS NOT DEFIND....",wallet,user);
+  
   sendResponse(res, {
     success: true,
     statuscode: StatusCodes.OK,
-    message: 'All Users Retrieved Successfully',
+    message: 'withdrawManey Successfully',
     data: wallet
   });
 })
@@ -51,15 +54,15 @@ const withdrawMoney = catchAsync(async (req: Request, res: Response, next: NextF
 
 // wallet.controller.ts
  const sendMany = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const senderId = req.user?.userId;
-  const { transactions } = req.body; 
 
-  const result = await WalletServices.sendMany(senderId, transactions);
+  const { receiverId,amount } = req.body; 
+   const user = req.user as any
+   const result = await WalletServices.sendMany(user.userId, receiverId, Number(amount));
 
   sendResponse(res, {
     success: true,
     statuscode: httpStatus.OK,
-    message: "Money sent to many users successfully",
+    message: "Money sent successfully",
     data: result,
   });
 });
@@ -69,58 +72,68 @@ const withdrawMoney = catchAsync(async (req: Request, res: Response, next: NextF
 const myTransactions = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
 
+  const user = req.user as any
+  const result = await WalletServices.myTransactions(user.userId)
+   
   sendResponse(res, {
     success: true,
     statuscode: StatusCodes.OK,
-    message: 'All Users Retrieved Successfully',
-    data: {}
+    message: "Transactions fetched successfully",
+    data: result
   });
 })
 
 
 const cashIn = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
+  const agentId = (req.user as any).userId 
+  const {receiverId, amount } = req.body;
 
+  const data = await WalletServices.cashIn(agentId,receiverId,amount)
   sendResponse(res, {
     success: true,
     statuscode: StatusCodes.OK,
     message: 'All Users Retrieved Successfully',
-    data: {}
+    data: data
   });
 })
 
 
 const cashOut = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
+  const agentId = (req.user as any).userId
+  const { senderId, amount } = req.body;
 
+  const data = await WalletServices.cashOut(agentId, senderId, amount)
   sendResponse(res, {
     success: true,
     statuscode: StatusCodes.OK,
     message: 'All Users Retrieved Successfully',
-    data: {}
+    data: data
   });
 })
 
 
 const allUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 
-
+  const allWalate = await WalletServices.allWalate()
   sendResponse(res, {
     success: true,
     statuscode: StatusCodes.OK,
     message: 'All Users Retrieved Successfully',
-    data: {}
+    data: allWalate
   });
 })
 
 const blockWallet = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.params.id;
 
-
+  const blockWallet = await WalletServices.blockWallet(userId)
   sendResponse(res, {
     success: true,
     statuscode: StatusCodes.OK,
-    message: 'All Users Retrieved Successfully',
-    data: {}
+    message: 'All block blockWallet',
+    data: blockWallet
   });
 })
 

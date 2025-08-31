@@ -2,6 +2,10 @@
 
 
 import mongoose from "mongoose";
+
+import TransactionModel from "../transaction/transaction.model";
+import { TransactionStatus } from "../transaction/transaction.interface";
+import { IUser } from "../user/user.interface";
 import { Wallet } from "./wallet.model";
 
 
@@ -15,17 +19,39 @@ const addMoney = async (userId: string, amount: number) => {
     throw new Error("Invalid amount");
   }
 
+  const session = await mongoose.startSession();
+  session.startTransaction()
+  try {
+    const wallet = await Wallet.findOneAndUpdate(
+      { user: userId, isBlocked: false }, { $inc: { balance: amount } },
+      { new: true, session }
+    );
 
-  const wallet = await Wallet.findOne({ user: new mongoose.Types.ObjectId(userId) });
+    if (!wallet) {
+      throw new Error("Wallet not found for this user");
+    }
 
-  if (!wallet) {
-    throw new Error("Wallet not found for this user");
+    await TransactionModel.create(
+      [
+        {
+          type: "Deposit",
+          amount,
+          sender: userId,
+          receiver: userId,
+          status: TransactionStatus.Completed
+        }
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+    return wallet;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-
-  wallet.balance += amount;
-  await wallet.save();
-
-  return wallet;
 };
 
 
@@ -35,60 +61,188 @@ const withdrawMoney = async (userId: string, amount: number) => {
     throw new Error("Invalid amount");
   }
 
+  const session = await mongoose.startSession()
+  session.startTransaction();
+ 
+  try {
+     
+    const wallets = await Wallet.findOne({ user: userId, }).session(session);
+    if (!wallets) throw new Error("Wallet not found or blocked");
+    if (wallets.balance < amount) throw new Error("Insufficient balance");
 
-  const wallet = await Wallet.findOne({ user: new mongoose.Types.ObjectId(userId) });
+    wallets.balance -= amount
+    await wallets.save({ session })
+    
+    await TransactionModel.create([
+      {
+        type: "Withdraw",
+        amount,
+        sender: userId,
+        receiver: userId,
+        status: TransactionStatus.Completed
+      }
+    ], { session })
+
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return wallets;
+    
+   } catch (error) {
+     await session.abortTransaction();
+     session.endSession();
+     throw error;
+   }
+
+  
+};
+
+
+
+const sendMany = async (userId: string ,receiverId: string, amount: number) => {
+  if (amount <= 0) throw new Error("Amount must be greater than 0");
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+
+  try {
+    const senderWallet = await Wallet.findOne({ user: userId, isBlocked: false }).session(session)
+  
+    const receiverWallet = await Wallet.findOne({ user: receiverId, isBlocked: false }).session(session)
+  
+    if (!senderWallet || !receiverWallet) throw new Error("Wallet not found or blocked");
+    if (senderWallet.balance < amount) throw new Error("Insufficient balance");
+
+
+    senderWallet.balance -= amount;
+    receiverWallet.balance += amount;
+    await senderWallet.save({ session });
+    await receiverWallet.save({ session });
+
+    await TransactionModel.create([{
+      type: "Send",
+      amount,
+      sender: userId,
+      receiver: receiverId,
+      status: TransactionStatus.Completed
+    }], { session })
+
+    await session.commitTransaction()
+    session.endSession();
+    return {
+      senderWallet,
+      receiverWallet
+    }
+  } catch (error) {
+    await session.abortTransaction()
+    session.endSession();
+    throw error
+  }
+
+  
+
+};
+
+
+
+const myTransactions = async (userId: string, ) => {
+
+
+  return  TransactionModel.find({
+    $or: [{ sender: userId }, { receiver: userId }]
+  }).sort({ createdAt: -1 });
+}
+   
+
+const cashIn = async (agentId:string, receiverId: string, amount: number) => {
+
+  if (!amount || amount <= 0) throw new Error("Invalid amount");
+
+  const senderWallet = await Wallet.findOne({ user: agentId })
+  const receiverWallet = await Wallet.findOne({ user: receiverId });
+
+  if (!senderWallet) throw new Error("Agent wallet not found");
+  if (!receiverWallet) throw new Error("Receiver wallet not found");
+  if (senderWallet.balance < amount) throw new Error("Insufficient balance in agent wallet");
+
+  senderWallet.balance -= amount
+  receiverWallet.balance += amount
+
+
+  await senderWallet.save();
+  await receiverWallet.save();
+
+  await TransactionModel.create({
+    type: "cash-in",
+    amount,
+    sender: agentId,
+    receiver: receiverId,
+    status: "completed"
+  });
+
+  return { senderWallet, receiverWallet };
+} 
+   
+
+const cashOut = async (agentId: string, senderId: string, amount: number) => {
+
+  if (!amount || amount <= 0) throw new Error("Invalid amount");
+     
+  
+  const senderWallet = await Wallet.findOne({ user: agentId })
+  const receiverWallet = await Wallet.findOne({ user: senderId });
+
+
+
+  if (!senderWallet) throw new Error("Sender wallet not found");
+  if (!receiverWallet) throw new Error("Agent wallet not found");
+  if (senderWallet.balance < amount) throw new Error("Insufficient balance in user wallet");
+
+
+  senderWallet.balance -= amount
+  receiverWallet.balance += amount
+
+  await senderWallet.save();
+  await receiverWallet.save();
+
+
+  await TransactionModel.create({
+    type: "cash-out", 
+    amount,
+    sender: senderId,
+    receiver: agentId,
+    status: "completed"
+  });
+
+
+  return { senderWallet, receiverWallet };
+
+}
+
+
+
+
+
+const allWalate = async () => {
+  return Wallet.find() 
+}
+
+
+
+
+const blockWallet = async (userId: string) => {
+
+  const blockWallets = await Wallet.findById(userId)
+  if (!blockWallets) throw new Error("Wallet not found");
+
+  blockWallets.isBlocked = !blockWallets.isBlocked;
+
+  await blockWallets.save();
  
 
-
-  if (!wallet) {
-    throw new Error("Wallet not found for this user");
-  }
-
-  wallet.balance -= amount;
-  await wallet.save();
-
-  return wallet;
-};
-
-
-
-const sendMany = async (senderId: string, transactions: Transaction[]) => {
-  if (!Array.isArray(transactions)) {
-    throw new Error("Transactions must be an array");
-  }
-
-  const senderWallet = await Wallet.findOne({ user: new mongoose.Types.ObjectId(senderId) });
-  if (!senderWallet) throw new Error("Sender wallet not found");
-
-  // Calculate total
-  let totalAmount = 0;
-  transactions.forEach(tx => totalAmount += tx.amount);
-
-  if (senderWallet.balance < totalAmount) throw new Error("Insufficient balance");
-
-  const results: any[] = [];
-
-  for (const tx of transactions) {
-    const receiverWallet = await Wallet.findOne({ user: new mongoose.Types.ObjectId(tx.toUserId) });
-
-    if (!receiverWallet) {
-      results.push({ toUserId: tx.toUserId, status: "failed", reason: "Receiver wallet not found" });
-      continue;
-    }
-
-    // Update balances
-    senderWallet.balance -= tx.amount;
-    receiverWallet.balance += tx.amount;
-
-    await receiverWallet.save();
-    results.push({ toUserId: tx.toUserId, status: "success", amount: tx.amount });
-  }
-
-  // Save sender wallet after all deductions
-  await senderWallet.save();
-
-  return results;
-};
+}
 
 
 
@@ -96,4 +250,9 @@ export const WalletServices = {
   addMoney,
   withdrawMoney,
   sendMany,
+  myTransactions,
+  cashOut,
+  cashIn,
+  allWalate,
+  blockWallet
 };

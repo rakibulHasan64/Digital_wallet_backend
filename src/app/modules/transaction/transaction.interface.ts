@@ -1,23 +1,19 @@
-// src/modules/transaction/interface.ts
-import { Document, Types } from "mongoose";
+export type TransactionType = "Deposit" | "Withdraw" | "Send" | "Cash-in" | "Cash-out";
 
-export type TransactionType =
-  | "deposit"
-  | "withdraw"
-  | "send"
-  | "cash-in"
-  | "cash-out";
+export enum TransactionStatus {
+  Pending = "Pending",
+  Completed = "Completed",
+  Reversed = "Reversed",
+}
 
-export type TransactionStatus = "pending" | "completed" | "reversed";
-
-export interface ITransaction extends Document {
+export interface ITransaction {
   type: TransactionType;
   amount: number;
   fee?: number;
   commission?: number;
-  sender?: Types.ObjectId; // User or Agent who initiated
-  receiver?: Types.ObjectId; // User or Agent who received
+  sender?: string;   // User ObjectId
+  receiver?: string; // User ObjectId
   status: TransactionStatus;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

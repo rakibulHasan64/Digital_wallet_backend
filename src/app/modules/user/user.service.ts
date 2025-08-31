@@ -1,9 +1,11 @@
 
+import mongoose from "mongoose";
 import { Wallet } from "../wallet/wallet.model";
 import { IAuthProvider, IUser } from "./user.interface";
 import { User } from "./user.model";
 
 import bcryptjs from "bcryptjs"
+
 
 
 
@@ -14,32 +16,44 @@ const createUser = async (payload: Partial<IUser>) => {
     throw new Error("Name, email, and password are required");
   }
 
-  const haspasword=await bcryptjs.hash(password as string, 10)
-  console.log(haspasword, "user is being created");
+  const hashedPassword = await bcryptjs.hash(password as string, 10);
 
-   const authProvider: IAuthProvider={provider:"credentials",providerId: email as string}
-  const user = new User({
-    name,
-    email,
-    password: haspasword,
-    auths: [authProvider],
-    role: role || "USER",
-    phone,
-    picture,
-    address,
-  });
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  // 2️⃣ Create Wallet
-  const wallet = await Wallet.create({ user: user._id, balance: 50 }) 
+  try {
+    const authProvider = { provider: "credentials", providerId: email as string };
 
-   user.wallet = wallet._id;
+    // 1️⃣ Create user
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      auths: [authProvider],
+      role: role || "USER",
+      phone,
+      picture,
+      address,
+    });
 
+    // 2️⃣ Create Wallet
+    const wallet = await Wallet.create([{ user: user._id, balance: 50 }], { session });
+    user.wallet = wallet[0]._id;
 
+    // 3️⃣ Save user
+    await user.save({ session });
 
-  await user.save();
+    await session.commitTransaction();
+    session.endSession();
 
-  return user;
+    return user;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
+
 const getAllUser = async () => {
 
   console.log("data is ");

@@ -1,4 +1,3 @@
-// src/modules/transaction/model.ts
 import { Schema, model, Types } from "mongoose";
 import { ITransaction, TransactionStatus, TransactionType } from "./transaction.interface";
 
@@ -6,7 +5,7 @@ const TransactionSchema = new Schema<ITransaction>(
   {
     type: {
       type: String,
-      enum: ["deposit", "withdraw", "send", "cash-in", "cash-out"] as TransactionType[],
+      enum: ["Deposit", "Withdraw", "Send", "Cash-in", "Cash-out"] as TransactionType[],
       required: true,
     },
     amount: { type: Number, required: true, min: 0 },
@@ -16,8 +15,8 @@ const TransactionSchema = new Schema<ITransaction>(
     receiver: { type: Types.ObjectId, ref: "User" },
     status: {
       type: String,
-      enum: ["pending", "completed", "reversed"] as TransactionStatus[],
-      default: "pending",
+      enum: Object.values(TransactionStatus),
+      default: TransactionStatus.Pending,  // <-- TypeScript enum ব্যবহার
     },
   },
   { timestamps: true }

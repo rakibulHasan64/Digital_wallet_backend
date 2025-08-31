@@ -4,7 +4,7 @@ import { z } from "zod";
 /** Deposit / Withdraw / Send money */
 export const walletTransactionSchema = z.object({
   amount: z.number().positive("Amount must be positive"),
-  receiverId: z.string().optional(), // শুধু send বা cash-out এর জন্য
+  receiverId: z.string().optional(), 
 });
 
 /** Block / Unblock wallet */

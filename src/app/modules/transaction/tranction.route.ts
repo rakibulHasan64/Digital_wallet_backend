@@ -7,7 +7,8 @@ import { TransactionController } from "./transaction.contoller";
 const router = express.Router();
 
 
-router.get("/me", checkAuth(Role.USER,Role.AGENT), TransactionController.myTransactions);
+router.get("/me", checkAuth(...Object.values(Role)), TransactionController.myTransactions);
+
 router.get("/all", checkAuth(Role.ADMIN), TransactionController.allTransactions);
 
 export default router;
